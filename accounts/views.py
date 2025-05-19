@@ -5,6 +5,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework.permissions import AllowAny
+from django.conf import settings
 
 from .serializers import RegisterSerializer
 from .models import User
@@ -134,3 +138,44 @@ class DeleteAccountView(APIView):
         email = user.email
         user.delete()
         return Response({'detail': f'User {email} deleted successfully.'}, status=200)
+
+
+class LoginView(APIView):
+    """
+    Authenticates user and returns JWT tokens.
+    Supports 'remember_me' to extend token lifetime.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email_or_username = request.data.get('email') or request.data.get('username')
+        password = request.data.get('password')
+        remember_me = request.data.get('remember_me', False)
+
+        if not email_or_username or not password:
+            return Response({'error': 'Email/Username and password are required.'}, status=400)
+
+        user = authenticate(request, username=email_or_username, password=password)
+        if user is None:
+            return Response({'error': 'Invalid credentials.'}, status=401)
+        
+        if not user.is_active:
+            return Response({'error': 'Email not verified.'}, status=403)
+
+        refresh = RefreshToken.for_user(user)
+
+        # Optional: adjust expiry based on remember_me
+        if remember_me:
+            refresh.set_exp(lifetime=settings.SIMPLE_JWT['REMEMBER_ME_LIFETIME'])
+        else:
+            refresh.set_exp(lifetime=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'])
+
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'username': user.username
+            }
+        })
