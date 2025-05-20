@@ -1,5 +1,6 @@
 # accounts/views.py
 
+from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -141,10 +142,6 @@ class DeleteAccountView(APIView):
 
 
 class LoginView(APIView):
-    """
-    Authenticates user and returns JWT tokens.
-    Supports 'remember_me' to extend token lifetime.
-    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -155,16 +152,24 @@ class LoginView(APIView):
         if not email_or_username or not password:
             return Response({'error': 'Email/Username and password are required.'}, status=400)
 
-        user = authenticate(request, username=email_or_username, password=password)
-        if user is None:
+        try:
+            user = User.objects.get(Q(email=email_or_username) | Q(username=email_or_username))
+        except User.DoesNotExist:
             return Response({'error': 'Invalid credentials.'}, status=401)
-        
-        if not user.is_active:
-            return Response({'error': 'Email not verified.'}, status=403)
 
+        # Check password manually
+        if not user.check_password(password):
+            return Response({'error': 'Invalid credentials.'}, status=401)
+
+        if not user.is_active:
+            return Response({
+                'error': 'Email not verified',
+                'message': 'Your email address has not been verified. Please check your inbox.'
+            }, status=403)
+
+        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
 
-        # Optional: adjust expiry based on remember_me
         if remember_me:
             refresh.set_exp(lifetime=settings.SIMPLE_JWT['REMEMBER_ME_LIFETIME'])
         else:
