@@ -18,7 +18,12 @@ class CancelBulkEmailView(APIView):
 class CheckTaskStatusView(APIView):
     def get(self, request, task_id):
         result = AsyncResult(task_id)
+
+        info = result.info
+        if isinstance(info, BaseException):
+            info = str(info)  # Convert exception to string for safe JSON
+
         return Response({
             "state": result.state,
-            "info": result.info  # Can include {"success": 5, "failure": 0}
+            "info": info
         })
