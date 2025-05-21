@@ -1,0 +1,7 @@
+Django
+djangorestframework
+celery
+redis
+python-decouple
+pandas
+gunicorn
