@@ -20,6 +20,9 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from restcom_backend.views import (
+    CancelBulkEmailView, CheckTaskStatusView
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,4 +30,7 @@ urlpatterns = [
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('emails/', include('emails.urls')),
+    path('cancel-task/', CancelBulkEmailView.as_view(), name='cancel-task'),
+    path('task-status/<str:task_id>/', CheckTaskStatusView.as_view(), name='task-status'),
+
 ]

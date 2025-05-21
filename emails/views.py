@@ -6,6 +6,8 @@ from rest_framework import status
 from emails.utils.file_parser import parse_uploaded_file
 from emails.utils.message_formatter import personalize_message
 from emails.utils.email_utils import send_bulk_emails
+from emails.tasks.tasks import send_bulk_emails_task
+
 
 from ai_core.services.deepseek_client import generate_ai_response
 from ai_core.utils.email_utils import get_email_prompt_suggestions
@@ -15,10 +17,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SendBulkEmailView(APIView):
-    """
-    Handles uploading of a file containing recipient data,
-    and sends personalized emails in bulk using fallback SMTP.
-    """
     parser_classes = [MultiPartParser]
 
     def post(self, request):
@@ -31,11 +29,12 @@ class SendBulkEmailView(APIView):
 
         try:
             recipients = parse_uploaded_file(file)
-            success, failure = send_bulk_emails(subject, message_template, recipients)
+            task = send_bulk_emails_task.delay(subject, message_template, recipients)
+
             return Response({
-                'success_count': success,
-                'failed_count': failure
-            }, status=200)
+                'message': 'Email sending task started.',
+                'task_id': task.id
+            }, status=202)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 
