@@ -21,6 +21,7 @@ class SendBulkEmailView(APIView):
 
     def post(self, request):
         file = request.FILES.get('file')
+        attachment = request.FILES.get('attachment')
         subject = request.data.get('subject')
         message_template = request.data.get('message')
 
@@ -29,7 +30,15 @@ class SendBulkEmailView(APIView):
 
         try:
             recipients = parse_uploaded_file(file)
-            task = send_bulk_emails_task.delay(subject, message_template, recipients)
+
+            # ✅ Forward attachment as bytes (serialized) to the task
+            attachment_data = {
+                "name": attachment.name,
+                "content": attachment.read(),
+                "content_type": attachment.content_type
+            } if attachment else None
+
+            task = send_bulk_emails_task.delay(subject, message_template, recipients, attachment_data)
 
             return Response({
                 'message': 'Email sending task started.',
