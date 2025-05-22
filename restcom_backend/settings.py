@@ -13,6 +13,12 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+import os
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Add this line
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,8 +33,12 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = [
+    'restcom-backend.amberwithcamera.com',
+    'restcom-frontend.amberwithcamera.com',
+    'localhost',
+    '127.0.0.1'
+]
 
 # Application definition
 
@@ -87,8 +97,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# SECURITY WARNING: Change in production.
-CORS_ALLOW_ALL_ORIGINS = True
+# SECURITY WARNING: Change from True in production.
+CORS_ALLOWED_ORIGINS = [
+    "https://restcom-frontend.amberwithcamera.com",
+]
 
 ROOT_URLCONF = 'restcom_backend.urls'
 

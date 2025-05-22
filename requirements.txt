@@ -5,3 +5,7 @@ redis
 python-decouple
 pandas
 gunicorn
+django-cors-headers
+djangorestframework-simplejwt
+requests
+dotenv
